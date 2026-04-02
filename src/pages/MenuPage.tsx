@@ -1,11 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, Grid3X3, List, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Search, SlidersHorizontal, Grid3X3, List, X, Table, Info } from "lucide-react";
 import { menuItems, categories } from "@/data/menu";
 import MenuCard from "@/components/menu/MenuCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTableStore } from "@/stores/tableStore";
+import { Badge } from "@/components/ui/badge";
 
 const MenuPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,6 +16,10 @@ const MenuPage = () => {
   const [sort, setSort] = useState("popular");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 20]);
   const [showFilters, setShowFilters] = useState(false);
+
+  const tableId = searchParams.get("tableId");
+  const { tables } = useTableStore();
+  const activeTable = tableId ? tables.find(t => t.id === tableId) : null;
 
   const activeCategory = searchParams.get("category") || "all";
 
@@ -36,10 +42,36 @@ const MenuPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-3xl font-bold md:text-4xl">Our Menu</h1>
-        <p className="mt-2 text-muted-foreground">Discover your new favorite</p>
-      </motion.div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="font-display text-3xl font-bold md:text-4xl">Our Menu</h1>
+          <p className="mt-2 text-muted-foreground">Discover your new favorite</p>
+        </motion.div>
+
+        {activeTable && (
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="flex items-center gap-3 rounded-full border border-cafe-amber/30 bg-cafe-amber/10 px-4 py-2 text-cafe-amber"
+          >
+            <Table className="h-5 w-5" />
+            <div className="text-sm font-bold">Dine-in: Table {activeTable.name}</div>
+            <Badge variant="outline" className="border-cafe-amber/30 text-[10px] text-cafe-amber">Active Session</Badge>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Info banner for QR ordering */}
+      {activeTable && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-sm text-blue-700 dark:border-blue-900/30 dark:bg-blue-900/10 dark:text-blue-400"
+        >
+          <Info className="h-4 w-4 shrink-0" />
+          <p>You are ordering for <strong>Table {activeTable.name}</strong>. Your order will be served directly to your table.</p>
+        </motion.div>
+      )}
 
       {/* Search & Controls */}
       <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

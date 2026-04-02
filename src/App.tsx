@@ -16,6 +16,7 @@ const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const QRScanPage = lazy(() => import("./pages/QRScanPage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const StaffPanel = lazy(() => import("./pages/StaffPanel"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -53,6 +54,7 @@ const App = () => (
                 <Route path="/menu/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/qr-order" element={<QRScanPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/orders/:id" element={<OrdersPage />} />

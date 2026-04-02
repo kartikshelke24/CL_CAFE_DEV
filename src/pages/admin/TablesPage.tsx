@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Pencil, Trash2, Users, Circle, Square } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Circle, Square, QrCode, Download, ExternalLink } from "lucide-react";
 import { useTableStore, type CafeTable, type TableShape, type TableStatus } from "@/stores/tableStore";
 import { useOrderStore } from "@/stores/orderStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -27,8 +27,10 @@ const TablesPage = () => {
   const { tables, addTable, updateTable, deleteTable, setStatus } = useTableStore();
   const orders = useOrderStore((s) => s.orders);
   const [modalOpen, setModalOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingTable, setEditingTable] = useState<CafeTable | null>(null);
+  const [selectedTableForQr, setSelectedTableForQr] = useState<CafeTable | null>(null);
   const [form, setForm] = useState({ name: "", capacity: 4, shape: "square" as TableShape, status: "available" as TableStatus });
 
   const openAdd = () => {
@@ -42,6 +44,11 @@ const TablesPage = () => {
     setEditingTable(t);
     setForm({ name: t.name, capacity: t.capacity, shape: t.shape, status: t.status });
     setModalOpen(true);
+  };
+
+  const openQr = (t: CafeTable) => {
+    setSelectedTableForQr(t);
+    setQrModalOpen(true);
   };
 
   const handleSave = () => {
@@ -68,6 +75,16 @@ const TablesPage = () => {
   const availableCount = tables.filter((t) => t.status === "available").length;
   const occupiedCount = tables.filter((t) => t.status === "occupied").length;
   const reservedCount = tables.filter((t) => t.status === "reserved").length;
+
+  const getTableQrUrl = (id: string) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/qr-order?table=${id}`;
+  };
+
+  const downloadQr = (table: CafeTable) => {
+    toast.success(`Downloading QR Code for Table ${table.name}`);
+    // In a real app, generate a real QR image and download it
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -135,6 +152,7 @@ const TablesPage = () => {
                       <SelectItem value="reserved">Reserved</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openQr(table)}><QrCode className="h-3.5 w-3.5 text-cafe-amber" /></Button>
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(table)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDeleteId(table.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                 </div>
@@ -180,6 +198,53 @@ const TablesPage = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
             <Button onClick={handleSave}>{editingTable ? "Update" : "Add"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Modal */}
+      <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Table QR Code</DialogTitle>
+            <DialogDescription>
+              Scan this code to start ordering from Table {selectedTableForQr?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center space-y-6 py-4">
+            <div className="relative rounded-2xl border-4 border-cafe-amber/20 bg-white p-6 shadow-xl">
+              <QrCode className="h-48 w-48 text-cafe-coffee" />
+              <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                <span className="text-4xl font-black uppercase tracking-widest rotate-45">Brew Haven</span>
+              </div>
+            </div>
+            
+            <div className="w-full space-y-2 text-center">
+              <p className="text-sm font-medium">Table {selectedTableForQr?.name} Ordering URL:</p>
+              <div className="flex items-center gap-2 rounded-lg bg-secondary p-2 text-xs font-mono">
+                <span className="flex-1 truncate">{selectedTableForQr && getTableQrUrl(selectedTableForQr.id)}</span>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6" 
+                  onClick={() => {
+                    if (selectedTableForQr) {
+                      window.open(getTableQrUrl(selectedTableForQr.id), '_blank');
+                    }
+                  }}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button 
+              className="gap-2" 
+              onClick={() => selectedTableForQr && downloadQr(selectedTableForQr)}
+            >
+              <Download className="h-4 w-4" /> Download PNG
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

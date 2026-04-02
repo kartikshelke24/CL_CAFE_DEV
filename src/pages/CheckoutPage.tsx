@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, CreditCard, Banknote, Smartphone, ArrowLeft, ArrowRight, PartyPopper } from "lucide-react";
+import { Check, CreditCard, Banknote, Smartphone, ArrowLeft, ArrowRight, PartyPopper, Table, Info } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 import { useOrderStore } from "@/stores/orderStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -15,13 +15,16 @@ import { toast } from "sonner";
 const steps = ["Details", "Payment", "Review"];
 
 const CheckoutPage = () => {
+  const [searchParams] = useSearchParams();
+  const tableIdFromQuery = searchParams.get("tableId");
+  
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [payment, setPayment] = useState("card");
-  const [orderType, setOrderType] = useState<"dine-in" | "takeaway">("takeaway");
-  const [selectedTable, setSelectedTable] = useState("");
+  const [orderType, setOrderType] = useState<"dine-in" | "takeaway">(tableIdFromQuery ? "dine-in" : "takeaway");
+  const [selectedTable, setSelectedTable] = useState(tableIdFromQuery || "");
   const [orderPlaced, setOrderPlaced] = useState<string | null>(null);
 
   const cart = useCartStore();
@@ -30,7 +33,15 @@ const CheckoutPage = () => {
   const { tables, setStatus: setTableStatus } = useTableStore();
   const navigate = useNavigate();
 
-  const availableTables = tables.filter((t) => t.status === "available");
+  const activeTable = tables.find(t => t.id === selectedTable);
+  const availableTables = tables.filter((t) => t.status === "available" || t.id === tableIdFromQuery);
+
+  useEffect(() => {
+    if (tableIdFromQuery) {
+      setOrderType("dine-in");
+      setSelectedTable(tableIdFromQuery);
+    }
+  }, [tableIdFromQuery]);
 
   const handlePlace = () => {
     const orderId = placeOrder({
@@ -110,23 +121,33 @@ const CheckoutPage = () => {
             {/* Order Type */}
             <div>
               <Label className="mb-2 block">Order Type</Label>
-              <div className="flex gap-3">
-                {(["dine-in", "takeaway"] as const).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => { setOrderType(type); if (type === "takeaway") setSelectedTable(""); }}
-                    className={`flex-1 rounded-xl border p-3 text-center text-sm font-medium capitalize transition-all ${
-                      orderType === type ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {type === "dine-in" ? "🍽️ Dine In" : "🥡 Takeaway"}
-                  </button>
-                ))}
-              </div>
+              {tableIdFromQuery ? (
+                <div className="flex items-center gap-3 rounded-xl border border-cafe-amber/30 bg-cafe-amber/5 p-4 text-cafe-amber">
+                  <Table className="h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-bold">Dine-in (Table {activeTable?.name})</p>
+                    <p className="text-[10px] opacity-80 uppercase tracking-tighter font-bold">QR ORDER SESSION ACTIVE</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  {(["dine-in", "takeaway"] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => { setOrderType(type); if (type === "takeaway") setSelectedTable(""); }}
+                      className={`flex-1 rounded-xl border p-3 text-center text-sm font-medium capitalize transition-all ${
+                        orderType === type ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {type === "dine-in" ? "🍽️ Dine In" : "🥡 Takeaway"}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Table Selection */}
-            {orderType === "dine-in" && (
+            {orderType === "dine-in" && !tableIdFromQuery && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
                 <Label className="mb-2 block">Select Table</Label>
                 <Select value={selectedTable} onValueChange={setSelectedTable}>
