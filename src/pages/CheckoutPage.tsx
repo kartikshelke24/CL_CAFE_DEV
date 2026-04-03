@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, CreditCard, Banknote, Smartphone, ArrowLeft, ArrowRight, PartyPopper, Table, Info } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 const steps = ["Details", "Payment", "Review"];
 
 const CheckoutPage = () => {
+  const { subdomain } = useParams();
   const [searchParams] = useSearchParams();
   const tableIdFromQuery = searchParams.get("tableId");
   
@@ -63,6 +64,11 @@ const CheckoutPage = () => {
     cart.clearCart();
     setOrderPlaced(orderId);
     toast.success("Order placed successfully!");
+
+    // Auto-redirect after success
+    setTimeout(() => {
+      navigate(`/v/${subdomain}/orders`);
+    }, 3000);
   };
 
   if (orderPlaced) {
@@ -81,7 +87,7 @@ const CheckoutPage = () => {
           <p className="mt-2 text-muted-foreground">Your order <strong>{orderPlaced}</strong> has been placed.</p>
           <div className="mt-6 flex justify-center gap-3">
             <Button onClick={() => navigate(`/orders/${orderPlaced}`)}>Track Order</Button>
-            <Button variant="outline" onClick={() => navigate("/menu")}>Continue Shopping</Button>
+            <Button variant="outline" onClick={() => navigate(`/v/${subdomain}/menu`)}>Continue Shopping</Button>
           </div>
         </motion.div>
       </div>

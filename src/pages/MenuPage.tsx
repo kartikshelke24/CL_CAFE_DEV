@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, Grid3X3, List, X, Table, Info } from "lucide-react";
-import { menuItems, categories } from "@/data/menu";
+import { menuItems as defaultMenuItems, categories as defaultCategories } from "@/data/menu";
 import MenuCard from "@/components/menu/MenuCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,22 @@ import { useTableStore } from "@/stores/tableStore";
 import { Badge } from "@/components/ui/badge";
 
 const MenuPage = () => {
+  const { subdomain } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [sort, setSort] = useState("popular");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 20]);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Dynamic Data Loading
+  const cafeData = useMemo(() => {
+    const saved = localStorage.getItem(`cafe_${subdomain}`);
+    return saved ? JSON.parse(saved) : null;
+  }, [subdomain]);
+
+  const menuItems = cafeData?.menuItems || defaultMenuItems;
+  const categories = cafeData?.categories || defaultCategories;
 
   const tableId = searchParams.get("tableId");
   const { tables } = useTableStore();

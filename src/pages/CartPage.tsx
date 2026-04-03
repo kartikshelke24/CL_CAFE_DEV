@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Minus, Plus, ShoppingBag, ArrowRight, Tag, X } from "lucide-react";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 const CartPage = () => {
+  const { subdomain } = useParams();
   const { items, removeItem, updateQuantity, applyCoupon, removeCoupon, couponCode, getSubtotal, getTax, getDiscount, getTotal } = useCartStore();
   const [couponInput, setCouponInput] = useState("");
 
@@ -24,7 +25,7 @@ const CartPage = () => {
           <ShoppingBag className="mx-auto h-16 w-16 text-muted-foreground/30" />
           <h2 className="mt-4 font-display text-2xl font-bold">Your cart is empty</h2>
           <p className="mt-2 text-muted-foreground">Add some delicious items to get started</p>
-          <Link to="/menu"><Button className="mt-6">Browse Menu</Button></Link>
+          <Link to={`/v/${subdomain}/menu`}><Button className="mt-6">Browse Menu</Button></Link>
         </motion.div>
       </div>
     );
@@ -116,7 +117,7 @@ const CartPage = () => {
               </div>
             </div>
 
-            <Link to="/checkout">
+            <Link to={`/v/${subdomain}/checkout`}>
               <Button className="mt-6 w-full gap-2" size="lg">
                 Checkout <ArrowRight className="h-4 w-4" />
               </Button>

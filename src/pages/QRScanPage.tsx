@@ -1,17 +1,27 @@
 import { motion } from "framer-motion";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { QrCode, ArrowRight, Table, Store, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTableStore } from "@/stores/tableStore";
 import { toast } from "sonner";
 
 const QRScanPage = () => {
+  const { subdomain } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const tableId = searchParams.get("table");
-  const { tables } = useTableStore();
+  
+  // Dynamic Table Loading
+  const cafeData = useMemo(() => {
+    const saved = localStorage.getItem(`cafe_${subdomain}`);
+    return saved ? JSON.parse(saved) : null;
+  }, [subdomain]);
+
+  const { tables: defaultTables } = useTableStore();
+  const tables = cafeData?.tables || defaultTables;
+
   const [table, setTable] = useState(tables.find(t => t.id === tableId));
   const [scanning, setScanning] = useState(!tableId);
 
@@ -31,10 +41,14 @@ const QRScanPage = () => {
 
   const handleStartOrdering = () => {
     if (table) {
-      navigate(`/menu?tableId=${table.id}`);
+      navigate(`/v/${subdomain}/menu?tableId=${table.id}`);
     } else {
-      navigate("/menu");
+      navigate(`/v/${subdomain}/menu`);
     }
+  };
+
+  const handleBrowseMenu = () => {
+    navigate(`/v/${subdomain}/menu`);
   };
 
   return (
@@ -93,7 +107,7 @@ const QRScanPage = () => {
                       key={t.id} 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => navigate(`/qr-order?table=${t.id}`)}
+                      onClick={() => navigate(`/v/${subdomain}/qr-order?table=${t.id}`)}
                       className="text-[10px] h-8"
                     >
                       Simulate T{t.name}
@@ -114,7 +128,7 @@ const QRScanPage = () => {
               
               <Button 
                 variant="ghost" 
-                onClick={() => navigate("/menu")} 
+                onClick={handleBrowseMenu} 
                 className="w-full gap-2"
               >
                 <Store className="h-4 w-4" /> Browse Menu (Takeaway)

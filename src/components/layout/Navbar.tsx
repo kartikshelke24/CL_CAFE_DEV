@@ -1,26 +1,37 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Menu, X, Sun, Moon, User, LogOut, Coffee } from "lucide-react";
-import { useState } from "react";
+import { ShoppingCart, Menu, X, Sun, Moon, User, LogOut, Coffee, LayoutDashboard } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { Button } from "@/components/ui/button";
 
 const Navbar = () => {
+  const { subdomain } = useParams();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const itemCount = useCartStore((s) => s.getItemCount());
   const { user, isAuthenticated, logout } = useAuthStore();
   const { isDark, toggle } = useThemeStore();
   const navigate = useNavigate();
 
-  const links = [
+  // Determine if we are on a cafe sub-site or the main marketing site
+  const isCafeSite = location.pathname.startsWith("/v/");
+  const currentCafe = subdomain || "brew-haven";
+  
+  const cafeData = isCafeSite ? JSON.parse(localStorage.getItem(`cafe_${currentCafe}`) || '{"cafeName": "Brew Haven"}') : null;
+
+  const links = isCafeSite ? [
+    { to: `/v/${currentCafe}`, label: "Home" },
+    { to: `/v/${currentCafe}/menu`, label: "Menu" },
+    { to: `/v/${currentCafe}/cart`, label: "Cart" },
+    ...(isAuthenticated ? [{ to: "/orders", label: "My Orders" }] : []),
+  ] : [
     { to: "/", label: "Home" },
-    { to: "/menu", label: "Menu" },
-    { to: "/cart", label: "Cart" },
-    ...(isAuthenticated ? [{ to: "/orders", label: "Orders" }] : []),
-    ...(user?.role === "admin" ? [{ to: "/admin", label: "Dashboard" }] : []),
-    ...(user?.role === "staff" ? [{ to: "/staff", label: "Staff Panel" }] : []),
+    { to: "/#features", label: "Features" },
+    { to: "/#pricing", label: "Pricing" },
+    { to: "/register", label: "Register Cafe" },
   ];
 
   return (
@@ -30,10 +41,10 @@ const Navbar = () => {
       className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl"
     >
       <div className="container mx-auto flex items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to={isCafeSite ? `/v/${currentCafe}` : "/"} className="flex items-center gap-2">
           <Coffee className="h-7 w-7 text-primary" />
           <span className="font-display text-xl font-bold text-foreground">
-            Brew Haven
+            {isCafeSite ? cafeData.cafeName : "CloudCafe OS"}
           </span>
         </Link>
 
@@ -54,32 +65,43 @@ const Navbar = () => {
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
-          <Link to="/cart" className="relative">
-            <Button variant="ghost" size="icon" className="text-muted-foreground">
-              <ShoppingCart className="h-4 w-4" />
-            </Button>
-            {itemCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
-              >
-                {itemCount}
-              </motion.span>
-            )}
-          </Link>
+          {isCafeSite && (
+            <Link to={`/v/${currentCafe}/cart`} className="relative">
+              <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <ShoppingCart className="h-4 w-4" />
+              </Button>
+              {itemCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
+                >
+                  {itemCount}
+                </motion.span>
+              )}
+            </Link>
+          )}
 
           {isAuthenticated ? (
-            <div className="hidden items-center gap-2 md:flex">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                {user?.avatar}
-              </span>
-              <Button variant="ghost" size="icon" onClick={() => { logout(); navigate("/"); }}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-2">
+              {user?.role === "admin" && (
+                <Link to="/admin">
+                  <Button variant="outline" size="sm" className="hidden gap-2 md:flex">
+                    <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  </Button>
+                </Link>
+              )}
+              <div className="hidden items-center gap-2 md:flex">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {user?.avatar}
+                </span>
+                <Button variant="ghost" size="icon" onClick={() => { logout(); navigate("/"); }}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ) : (
-            <Link to="/login" className="hidden md:block">
+            <Link to="/login">
               <Button variant="outline" size="sm" className="gap-1">
                 <User className="h-3.5 w-3.5" /> Sign In
               </Button>

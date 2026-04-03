@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { ArrowRight, Star, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowRight, Star, ChevronLeft, ChevronRight, Coffee, QrCode, Clock, MapPin, Phone } from "lucide-react";
+import { useState, useEffect } from "react";
 import { menuItems, categories, testimonials } from "@/data/menu";
 import { Button } from "@/components/ui/button";
 import MenuCard from "@/components/menu/MenuCard";
@@ -15,8 +15,37 @@ const fadeUp = {
 };
 
 const Home = () => {
+  const { subdomain } = useParams();
+  const [cafeData, setCafeData] = useState<any>(null);
   const featured = menuItems.filter((i) => i.popular).slice(0, 4);
   const [testimonialIdx, setTestimonialIdx] = useState(0);
+
+  useEffect(() => {
+    // Try to load cafe data from localStorage
+    const savedCafe = localStorage.getItem(`cafe_${subdomain}`);
+    if (savedCafe) {
+      setCafeData(JSON.parse(savedCafe));
+    } else if (subdomain === "brew-haven" || !subdomain) {
+      // Default demo data for Brew Haven
+      setCafeData({
+        cafeName: "Brew Haven",
+        primaryColor: "#B7791F",
+        address: "123 Coffee Lane, Barista District",
+        contactNumber: "+1 (555) 123-4567"
+      });
+    }
+  }, [subdomain]);
+
+  if (!cafeData) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center">
+        <Coffee className="h-12 w-12 animate-pulse text-primary" />
+        <h2 className="mt-4 text-xl font-bold">Loading Cafe...</h2>
+      </div>
+    );
+  }
+
+  const primaryColor = cafeData.primaryColor || "#B7791F";
 
   return (
     <div>
@@ -43,25 +72,25 @@ const Home = () => {
               transition={{ delay: 0.3 }}
               className="mb-4 inline-block rounded-full bg-cafe-amber/20 px-4 py-1.5 text-sm font-medium text-cafe-amber"
             >
-              ✨ Freshly roasted daily
+              Welcome to {cafeData.cafeName}
             </motion.span>
             <h1 className="font-display text-5xl font-bold leading-tight text-cafe-cream md:text-7xl" style={{ color: "hsl(35 40% 96%)" }}>
               Where Every Sip <br />
-              <span className="italic text-cafe-amber">Tells a Story</span>
+              <span className="italic" style={{ color: primaryColor }}>Tells a Story</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg" style={{ color: "hsl(35 20% 80%)" }}>
               Discover handcrafted beverages made from the finest single-origin beans,
               served in a space designed for connection.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link to="/menu">
-                <Button size="lg" className="gap-2 rounded-full px-8">
+              <Link to={subdomain ? `/v/${subdomain}/menu` : "/menu"}>
+                <Button size="lg" className="gap-2 rounded-full px-8" style={{ backgroundColor: primaryColor }}>
                   Explore Menu <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/menu">
+              <Link to={subdomain ? `/v/${subdomain}/qr-order` : "/menu"}>
                 <Button size="lg" variant="outline" className="rounded-full border-cafe-cream/30 px-8" style={{ color: "hsl(35 40% 96%)", borderColor: "hsl(35 40% 96% / 0.3)" }}>
-                  Order Now
+                  <QrCode className="mr-2 h-4 w-4" /> Scan & Order
                 </Button>
               </Link>
             </div>
@@ -136,6 +165,37 @@ const Home = () => {
             <div className="absolute -right-8 -top-8 h-64 w-64 rounded-full bg-background/10 blur-3xl" />
             <div className="absolute -bottom-12 right-20 h-48 w-48 rounded-full bg-background/5 blur-2xl" />
           </motion.div>
+        </div>
+      </section>
+
+      {/* Info Section */}
+      <section className="bg-cafe-coffee/5 py-20 dark:bg-cafe-coffee/20">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center justify-between gap-12 lg:flex-row">
+            <div className="max-w-xl text-center lg:text-left">
+              <h2 className="mb-6 font-display text-4xl font-bold md:text-5xl">Find Us Here</h2>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 justify-center lg:justify-start">
+                  <MapPin className="h-6 w-6 text-cafe-amber" />
+                  <p className="text-lg">{cafeData.address}</p>
+                </div>
+                <div className="flex items-center gap-4 justify-center lg:justify-start">
+                  <Phone className="h-6 w-6 text-cafe-amber" />
+                  <p className="text-lg">{cafeData.contactNumber}</p>
+                </div>
+              </div>
+              <div className="mt-10">
+                <Button variant="outline" className="rounded-full px-8">Get Directions</Button>
+              </div>
+            </div>
+            <div className="h-[400px] w-full max-w-2xl overflow-hidden rounded-[2rem] shadow-2xl grayscale transition-all hover:grayscale-0">
+              <img 
+                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=2070&auto=format&fit=crop" 
+                alt="Cafe Interior"
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
